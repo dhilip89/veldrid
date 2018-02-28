@@ -109,6 +109,7 @@ namespace Veldrid.NeoDemo
             RecreateWindowSizedResources(gd, cl);
 
             ShadowMaps.CreateDeviceResources(gd);
+            Console.WriteLine("End of SceneContext.CDO");
         }
 
         public virtual void DestroyDeviceObjects()

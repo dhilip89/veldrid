@@ -544,10 +544,12 @@ namespace Veldrid.NeoDemo
 
         internal void CreateAllDeviceObjects(GraphicsDevice gd, CommandList cl, SceneContext sc)
         {
+            Console.WriteLine("Creating all scene objects.");
             _cullableStage[0].Clear();
             _octree.GetAllContainedObjects(_cullableStage[0]);
             foreach (CullRenderable cr in _cullableStage[0])
             {
+                Console.WriteLine($"Calling CDO on {cr.ToString()}");
                 cr.CreateDeviceObjects(gd, cl, sc);
             }
             foreach (Renderable r in _freeRenderables)
@@ -557,6 +559,8 @@ namespace Veldrid.NeoDemo
 
             _resourceUpdateCL = gd.ResourceFactory.CreateCommandList();
             _resourceUpdateCL.Name = "Scene Resource Update Command List";
+
+            Console.WriteLine($"End of Scene.CDO");
         }
 
         private class RenderPassesComparer : IEqualityComparer<RenderPasses>
