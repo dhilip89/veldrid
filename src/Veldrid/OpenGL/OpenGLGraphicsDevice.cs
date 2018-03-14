@@ -12,6 +12,7 @@ namespace Veldrid.OpenGL
 {
     internal unsafe class OpenGLGraphicsDevice : GraphicsDevice
     {
+        private readonly GraphicsBackend _backendType;
         private readonly uint _vao;
         private readonly ConcurrentQueue<OpenGLDeferredResource> _resourcesToDispose
             = new ConcurrentQueue<OpenGLDeferredResource>();
@@ -42,11 +43,15 @@ namespace Veldrid.OpenGL
             = new Dictionary<MappedResourceCacheKey, MappedResourceInfoWithStaging>();
         private readonly MapResultHolder _mapResultHolder = new MapResultHolder();
 
+        private readonly object _resetEventsLock = new object();
+        private readonly List<ManualResetEvent[]> _resetEvents = new List<ManualResetEvent[]>();
+        private readonly Swapchain _mainSwapchain;
+
         private bool _syncToVBlank;
         public int MajorVersion { get; }
         public int MinorVersion { get; }
 
-        public override GraphicsBackend BackendType => GraphicsBackend.OpenGL;
+        public override GraphicsBackend BackendType => _backendType;
 
         public override ResourceFactory ResourceFactory { get; }
 
@@ -88,8 +93,11 @@ namespace Veldrid.OpenGL
             glGetIntegerv(GetPName.MinorVersion, &minorVersion);
             CheckLastError();
 
+            string version = Util.GetString(glGetString(StringName.Version));
+            _backendType = version.StartsWith("OpenGL ES") ? GraphicsBackend.OpenGLES : GraphicsBackend.OpenGL;
+
             MajorVersion = majorVersion;
-            MinorVersion = majorVersion;
+            MinorVersion = minorVersion;
 
             int extensionCount;
             glGetIntegerv(GetPName.NumExtensions, &extensionCount);
@@ -123,7 +131,7 @@ namespace Veldrid.OpenGL
                 PixelFormat.B8_G8_R8_A8_UNorm,
                 options.SwapchainDepthFormat);
 
-            if (options.Debug && _extensions.ARB_DebugOutput)
+            if (options.Debug && (_extensions.KHR_Debug || _extensions.ARB_DebugOutput))
             {
                 EnableDebugCallback();
             }
@@ -332,10 +340,6 @@ namespace Veldrid.OpenGL
 
             return result;
         }
-
-        private readonly object _resetEventsLock = new object();
-        private readonly List<ManualResetEvent[]> _resetEvents = new List<ManualResetEvent[]>();
-        private readonly Swapchain _mainSwapchain;
 
         private ManualResetEvent[] GetResetEventArray(int length)
         {

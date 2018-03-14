@@ -44,7 +44,9 @@ namespace Veldrid.OpenGL
         {
             if (!_isSwapchainFB)
             {
-                glDrawBuffer((DrawBufferMode)((uint)DrawBufferMode.ColorAttachment0 + index));
+                //glDrawBuffer((DrawBufferMode)((uint)DrawBufferMode.ColorAttachment0 + index));
+                DrawBuffersEnum bufs = (DrawBuffersEnum)((uint)DrawBuffersEnum.ColorAttachment0 + index);
+                glDrawBuffers(1, &bufs);
                 CheckLastError();
             }
 
@@ -58,7 +60,7 @@ namespace Veldrid.OpenGL
 
         public void ClearDepthStencil(float depth, byte stencil)
         {
-            glClearDepth(depth);
+            glClearDepth_Compat(depth);
             CheckLastError();
 
             glClearStencil(stencil);
