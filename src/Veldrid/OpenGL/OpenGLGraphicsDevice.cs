@@ -85,16 +85,17 @@ namespace Veldrid.OpenGL
             _deleteContext = platformInfo.DeleteContext;
             _swapBuffers = platformInfo.SwapBuffers;
             _setSyncToVBlank = platformInfo.SetSyncToVerticalBlank;
-            LoadAllFunctions(_glContext, platformInfo.GetProcAddress);
+            LoadGetString(_glContext, platformInfo.GetProcAddress);
+            string version = Util.GetString(glGetString(StringName.Version));
+            _backendType = version.StartsWith("OpenGL ES") ? GraphicsBackend.OpenGLES : GraphicsBackend.OpenGL;
+
+            LoadAllFunctions(_glContext, platformInfo.GetProcAddress, _backendType == GraphicsBackend.OpenGLES);
 
             int majorVersion, minorVersion;
             glGetIntegerv(GetPName.MajorVersion, &majorVersion);
             CheckLastError();
             glGetIntegerv(GetPName.MinorVersion, &minorVersion);
             CheckLastError();
-
-            string version = Util.GetString(glGetString(StringName.Version));
-            _backendType = version.StartsWith("OpenGL ES") ? GraphicsBackend.OpenGLES : GraphicsBackend.OpenGL;
 
             MajorVersion = majorVersion;
             MinorVersion = minorVersion;
@@ -115,7 +116,7 @@ namespace Veldrid.OpenGL
                 }
             }
 
-            _extensions = new OpenGLExtensions(extensions);
+            _extensions = new OpenGLExtensions(extensions, _backendType, MajorVersion, MinorVersion);
 
             ResourceFactory = new OpenGLResourceFactory(this);
 
@@ -137,10 +138,13 @@ namespace Veldrid.OpenGL
             }
 
             // Set miscellaneous initial states.
-            glEnable(EnableCap.TextureCubeMapSeamless);
-            CheckLastError();
+            if (_backendType == GraphicsBackend.OpenGL)
+            {
+                glEnable(EnableCap.TextureCubeMapSeamless);
+                CheckLastError();
+            }
 
-            _commandExecutor = new OpenGLCommandExecutor(_extensions, _stagingMemoryPool);
+            _commandExecutor = new OpenGLCommandExecutor(_backendType, _extensions, _stagingMemoryPool);
 
             int maxColorTextureSamples;
             glGetIntegerv(GetPName.MaxColorTextureSamples, &maxColorTextureSamples);
